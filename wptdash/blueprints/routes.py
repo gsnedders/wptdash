@@ -31,9 +31,6 @@ REPO = CONFIG.get('GitHub', 'REPO')
 DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
 
 RE_ENV = re.compile(r'(\w+)=(.+)')
-RE_PRODUCT = re.compile(r'PRODUCT=([\w:]+)')
-RE_JOB = re.compile(r'JOB=([\w:]+)')
-RE_TOX = re.compile(r'TOXENV=([\w:]+)')
 RE_SAUCE = re.compile(r'^sauce:')
 
 bp = Blueprint('routes', __name__)
@@ -520,15 +517,11 @@ def dictify_env_list(env_list):
 
 def add_job_to_session(job_data, build, db, models):
     env_dict = dictify_env_list(job_data['config'].get('env', []))
-    job_env = env_dict.get('JOB')
-    product_env = env_dict.get('PRODUCT')
-    tox_env = env_dict.get('TOXENV')
 
-    product_name = normalize_product_name(RE_PRODUCT.search(
-        product_env
-    ).group(1)) if product_env else None
-    job_name = RE_JOB.search(job_env).group(1) if job_env else None
-    python_version = RE_TOX.search(tox_env).group(1) if tox_env else None
+    product_name = env_dict.get('PRODUCT')
+    product_name = normalize_product_name(product_name) if product_name else None
+    job_name = env_dict.get('JOB')
+    python_version = env_dict.get('TOXENV')
 
     if not product_name:
         product_name = job_name
