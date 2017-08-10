@@ -30,6 +30,7 @@ ORG = CONFIG.get('GitHub', 'ORG')
 REPO = CONFIG.get('GitHub', 'REPO')
 DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
 
+RE_ENV = re.compile(r'(\w+)=(.+)')
 RE_PRODUCT = re.compile(r'PRODUCT=([\w:]+)')
 RE_JOB = re.compile(r'JOB=([\w:]+)')
 RE_TOX = re.compile(r'TOXENV=([\w:]+)')
@@ -508,19 +509,20 @@ def normalize_product_name(product_name):
     return RE_SAUCE.sub('', product_name)
 
 
+def dictify_env_list(env_list):
+    env_dict = {}
+    for variable in env_list:
+        match = RE_ENV.match(variable)
+        if match:
+            env_dict[match.group(1)] = match.group(2)
+    return env_dict
+
+
 def add_job_to_session(job_data, build, db, models):
-    job_env = next(
-        (x for x in job_data['config'].get('env', []) if 'JOB=' in x),
-        None
-    )
-    product_env = next(
-        (x for x in job_data['config'].get('env', []) if 'PRODUCT=' in x),
-        None
-    )
-    tox_env = next(
-        (x for x in job_data['config'].get('env', []) if 'TOXENV=' in x),
-        None
-    )
+    env_dict = dictify_env_list(job_data['config'].get('env', []))
+    job_env = env_dict.get('JOB')
+    product_env = env_dict.get('PRODUCT')
+    tox_env = env_dict.get('TOXENV')
 
     product_name = normalize_product_name(RE_PRODUCT.search(
         product_env
